@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rahul AI</title>
+    <style>
+        :root { --bg: #0f0f0f; --text: #e0e0e0; --accent: #4a90e2; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .msg { padding: 10px 15px; border-radius: 12px; max-width: 80%; background: #222; }
+        .user { align-self: flex-end; background: var(--accent); }
+        #input-area { padding: 20px; background: #1a1a1a; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: none; background: #333; color: white; }
+        button { padding: 10px 20px; border-radius: 8px; border: none; background: var(--accent); color: white; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="chat-container"></div>
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Rahul Sir, kya command hai?">
+        <button id="send-btn">Send</button>
+        <button id="mic-btn">🎙️</button>
+    </div>
+
+    <script>
+        const ws = new WebSocket(`ws://${window.location.host}/ws`);
+        const chat = document.getElementById('chat-container');
+        const input = document.getElementById('user-input');
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'text_chunk') {
+                let lastMsg = chat.lastElementChild;
+                if (!lastMsg || lastMsg.classList.contains('user')) {
+                    lastMsg = document.createElement('div');
+                    lastMsg.className = 'msg';
+                    chat.appendChild(lastMsg);
+                }
+                lastMsg.innerText += data.payload;
+                chat.scrollTop = chat.scrollHeight;
+            } else if (data.type === 'voice') {
+                const audio = new Audio(data.payload.audio_url);
+                audio.play();
+            }
+        };
+
+        document.getElementById('send-btn').onclick = () => {
+            const text = input.value;
+            chat.innerHTML += `<div class="msg user">${text}</div>`;
+            ws.send(JSON.stringify({type: 'chat', payload: text}));
+            input.value = '';
+        };
+
+        // Mic logic (SpeechRecognition)
+        const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        rec.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            input.value = transcript;
+        };
+        document.getElementById('mic-btn').onclick = () => rec.start();
+    </script>
+</body>
+</html>
