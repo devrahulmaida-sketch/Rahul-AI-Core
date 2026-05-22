@@ -11,10 +11,13 @@ class SystemSkill:
         elif action == "get_date":
             return f"Today is {datetime.datetime.now().strftime('%A, %B %d, %Y')}."
         elif action == "get_stats":
-            import psutil
-            cpu = psutil.cpu_percent()
-            ram = psutil.virtual_memory().percent
-            return f"System Status: CPU at {cpu}%, RAM at {ram}%."
+            try:
+                import psutil
+                cpu = psutil.cpu_percent()
+                ram = psutil.virtual_memory().percent
+                return f"System Status: CPU at {cpu}%, RAM at {ram}%."
+            except ImportError:
+                return "System stats not available on this platform."
         return "Unknown system action."
 
     def get_definition(self):
